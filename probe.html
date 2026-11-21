@@ -29,11 +29,14 @@
   <button data-note="silent" data-v="on">무음(주황색 보임)</button><button data-note="silent" data-v="off">소리 켬</button><button data-note="silent" data-v="na">아이폰 아님</button>
 
   <h2>1. 첫 누름으로 소리 켜기</h2>
-  <p>휴대폰 브라우저는 사람이 한 번 누르기 전에는 소리를 내지 못하게 합니다. 아래 큰 단추를 누르면 '삐' 소리, 그다음 녹음 목소리가 납니다.</p>
-  <button class="big" id="unlock">여기를 눌러 소리 켜기</button>
+  <p>휴대폰 브라우저는 사람이 한 번 누르기 전에는 소리를 내지 못하게 합니다. <b>아이폰은 무음(진동) 모드로 두고</b> A, 그다음 B를 누르세요.</p>
+  <button class="big" id="unlock">A. 게임 그대로 소리 켜기</button>
   <p class="r" id="unlockOut" role="status"></p>
-  <button data-ask="beep" data-v="yes">삐 소리 들림</button><button data-ask="beep" data-v="no">안 들림</button><br>
-  <button data-ask="mp3" data-v="yes">녹음 목소리 들림</button><button data-ask="mp3" data-v="no">안 들림</button>
+  <button data-ask="beep" data-v="yes">A 삐 소리 들림</button><button data-ask="beep" data-v="no">안 들림</button><br>
+  <button data-ask="mp3" data-v="yes">A 녹음 목소리 들림</button><button data-ask="mp3" data-v="no">안 들림</button>
+  <p>B는 '무음 모드에서도 소리 내기'를 켠 뒤 다시 '삐' 합니다(아이폰만 차이가 납니다).</p>
+  <button id="unlockB">B. 무음 모드에서도 소리 내기로 바꾸고 다시</button>
+  <button data-ask="beepB" data-v="yes">B 삐 소리 들림</button><button data-ask="beepB" data-v="no">안 들림</button>
   <p>이어폰을 끼고: 왼쪽, 그다음 오른쪽에서 나나요?</p>
   <button id="pan">왼쪽·오른쪽 소리</button><button data-ask="pan" data-v="yes">맞게 들림</button><button data-ask="pan" data-v="no">아님</button>
 
@@ -82,7 +85,8 @@ function beep(pan = 0, f = 660) {
 }
 $('#unlock').onclick = async () => {
   try {
-    if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; R.auto.audioSessionSet = true; } catch (e) { R.auto.audioSessionSet = String(e); } }
+    // A: 게임(js/music.js)과 같이 audioSession을 건드리지 않는다 — 아이폰 무음 모드에서 효과음(Web Audio)이 나는지 본다
+    R.auto.audioSessionTypeA = navigator.audioSession ? navigator.audioSession.type : 'none';
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
     await ctx.resume();
     R.auto.webAudioState = ctx.state;
@@ -92,10 +96,26 @@ $('#unlock').onclick = async () => {
     say('#unlockOut', `소리 장치: ${ctx.state}. '삐' 다음에 녹음 목소리가 나야 합니다.`, ctx.state === 'running');
   } catch (e) { R.auto.webAudioError = String(e); say('#unlockOut', '소리를 켜지 못했습니다: ' + e, false); }
 };
+$('#unlockB').onclick = async () => {
+  if (!ctx) { say('#unlockOut', '먼저 A를 누르세요', false); return; }
+  if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; R.auto.audioSessionSetB = navigator.audioSession.type; } catch (e) { R.auto.audioSessionSetB = String(e); } } else R.auto.audioSessionSetB = 'none';
+  await ctx.resume(); beep(0, 880);
+  say('#unlockOut', `B: 무음 무시 설정 = ${R.auto.audioSessionSetB}. '삐'가 들렸나요?`);
+};
 $('#pan').onclick = () => { if (!ctx) { say('#unlockOut', '먼저 1번 큰 단추를 누르세요', false); return; } beep(-1, 392); setTimeout(() => beep(1, 523), 800); };
-$('#tts').onclick = () => {
+function voicesReady(ms = 3000) {
+  return new Promise(res => {
+    const now = speechSynthesis.getVoices(); if (now.length) { res(now); return; }
+    const t = setTimeout(() => res(speechSynthesis.getVoices()), ms);
+    speechSynthesis.addEventListener('voiceschanged', () => { clearTimeout(t); res(speechSynthesis.getVoices()); }, { once: true });
+  });
+}
+$('#tts').onclick = async () => {
   if (!('speechSynthesis' in window)) { say('#ttsOut', '기기 음성 없음', false); return; }
-  const vs = speechSynthesis.getVoices(); R.auto.koVoices = vs.filter(v => /^ko/i.test(v.lang)).length; R.auto.allVoices = vs.length;
+  R.auto.voicesAtClick = speechSynthesis.getVoices().length;
+  const vs = await voicesReady(); R.auto.koVoices = vs.filter(v => /^ko/i.test(v.lang)).length; R.auto.allVoices = vs.length;
+  const byLang = {}; vs.forEach(v => { const k = (v.lang || '?').slice(0, 2).toLowerCase(); byLang[k] = (byLang[k] || 0) + 1; });
+  R.auto.voiceLangs = Object.entries(byLang).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => k + ':' + n).join(' ');
   // 게임(js/core.js preferredVoice)과 같은 방법으로 한국어 목소리를 직접 고른다. lang만 주면 iPhone은 기기 언어의 목소리로 읽는다(2026-11-21 실측)
   const ko = vs.filter(v => /^ko/i.test(v.lang));
   const pick = ko.find(v => /Yuna|Heami|Sora|SunHi|Google.*한국|Natural|Premium/i.test(v.name)) || ko[0] || null;
