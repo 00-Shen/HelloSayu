@@ -264,7 +264,7 @@ export function startView() {
   if (l.startView === 'about') return aboutView();
   // v2.1: QR로 들어오면 이 화면. 큰 '소리로 시작'(읽어 주기) · 낭독기 · 보면서 · 선생님용(장 고르기 · 설정) — 정거장 5개
   return `<h1>${esc(LD().title)}</h1>
-    <img class="listen-hero" src="${IMG.sayu}" alt="" aria-hidden="true">
+    <div class="listen-hero-box" aria-hidden="true"><img class="listen-hero" src="${IMG.sayu}" alt=""></div>
     <div class="start-choices">
       <button type="button" class="btn primary start-read" id="beginRead" data-key="beginRead">${esc(l.resume ? T.readResume : T.read)}<span class="sub">${esc(T.readSub)}</span></button>
       <button type="button" class="btn" id="beginSr" data-key="beginSr">${esc(l.resume ? T.srResume : T.sr)}</button>

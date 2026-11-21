@@ -102,7 +102,13 @@ h1 .pos { display: inline; font-size: .62em; font-weight: 700; color: var(--mute
 /* v2.1(2026-11-21 밤, 실기기 시험 뒤): 주 단추는 첫 화면 안 · 처음 화면은 큰 '소리로 시작' · 제안 고르기는 위/아래 두 칸.
    iPhone 15 Pro에서 첫 쪽 그림이 커서 단추를 보려면 내려야 했다(USER 2026-11-21). tests/e2e/l5-keyboard.mjs의 휴대폰 화면 검사가 지킨다.
    높이는 svh(주소창 · 도구 막대가 보일 때의 작은 화면 높이)로 잰다 — 휴대폰 브라우저의 vh는 막대가 숨은 큰 높이라 첫 화면을 넘칠 수 있다(앞의 vh 줄은 svh를 모르는 브라우저용) */
-.listen-hero { width: auto; max-width: min(100%, 420px); height: min(20vh, 200px); height: min(20svh, 200px); margin: 4px auto 10px; }
+.listen-hero-box { display: flex; justify-content: center; height: min(20vh, 200px); height: min(20svh, 200px); margin: 4px 0 10px; }
+.listen-hero-box .listen-hero { width: auto; max-width: 100%; height: 100%; margin: 0; }
+/* v2.1b: 처음 화면은 휴대폰 한 화면을 꽉 채우고, 남는 높이는 그림이 갖는다 — iPhone 15 Pro 실기기(보이는 곳 393×659)에서
+   그림이 작고 아래 70px쯤이 비어 있었다(USER 2026-11-21 21:54 사진). 작은 휴대폰(360×640)에서는 그림이 줄어 단추가 첫 화면에 남는다 */
+main#scene:has(> .start-choices) { display: grid; grid-template-rows: auto minmax(88px, 1fr) auto; min-height: 100vh; min-height: 100svh; padding-bottom: 12px; }
+main#scene:has(> .start-choices) .listen-hero-box { contain: size; height: 100%; max-height: 52svh; align-self: center; }
+main#scene:has(> .start-choices) .start-choices { margin-bottom: 0; }
 .start-choices { display: grid; gap: 12px; margin: 10px 0 24px; }
 .start-choices .btn { width: 100%; }
 .start-choices a.btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
