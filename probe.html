@@ -29,14 +29,16 @@
   <button data-note="silent" data-v="on">무음(주황색 보임)</button><button data-note="silent" data-v="off">소리 켬</button><button data-note="silent" data-v="na">아이폰 아님</button>
 
   <h2>1. 첫 누름으로 소리 켜기</h2>
-  <p>휴대폰 브라우저는 사람이 한 번 누르기 전에는 소리를 내지 못하게 합니다. <b>아이폰은 무음(진동) 모드로 두고</b> A, 그다음 B를 누르세요.</p>
+  <p>휴대폰 브라우저는 사람이 한 번 누르기 전에는 소리를 내지 못하게 합니다. <b>아이폰은 무음(진동) 모드로 두고</b> A, 그다음 B를 누르세요.
+    화면 낭독기가 켜져 있으면 단추를 한 번 눌러 고른 뒤 <b>두 번 톡</b> 눌러야 눌립니다. 눌리면 단추 글에 ✓가 붙습니다. 녹음은 몇 초만 들으면 됩니다.</p>
   <button class="big" id="unlock">A. 게임 그대로 소리 켜기</button>
   <p class="r" id="unlockOut" role="status"></p>
   <button data-ask="beep" data-v="yes">A 삐 소리 들림</button><button data-ask="beep" data-v="no">안 들림</button><br>
   <button data-ask="mp3" data-v="yes">A 녹음 목소리 들림</button><button data-ask="mp3" data-v="no">안 들림</button>
   <p>B는 '무음 모드에서도 소리 내기'를 켠 뒤 다시 '삐' 합니다(아이폰만 차이가 납니다).</p>
   <button id="unlockB">B. 무음 모드에서도 소리 내기로 바꾸고 다시</button>
-  <button data-ask="beepB" data-v="yes">B 삐 소리 들림</button><button data-ask="beepB" data-v="no">안 들림</button>
+  <button data-ask="beepB" data-v="yes">B 삐 소리 들림</button><button data-ask="beepB" data-v="no">안 들림</button><br>
+  <button data-ask="mp3B" data-v="yes">B 녹음 목소리 들림</button><button data-ask="mp3B" data-v="no">안 들림</button>
   <p>이어폰을 끼고: 왼쪽, 그다음 오른쪽에서 나나요?</p>
   <button id="pan">왼쪽·오른쪽 소리</button><button data-ask="pan" data-v="yes">맞게 들림</button><button data-ask="pan" data-v="no">아님</button>
 
@@ -70,7 +72,15 @@ const $ = s => document.querySelector(s);
 const show = () => { $('#out').value = JSON.stringify(R, null, 1); };
 const say = (id, t, good) => { const el = $(id); el.textContent = t; el.className = 'r ' + (good === undefined ? '' : good ? 'ok' : 'no'); show(); };
 document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { R.notes[b.dataset.note] = b.dataset.v; show(); b.blur(); });
-document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { R.asks[b.dataset.ask] = b.dataset.v; show(); });
+const NEED = { beep: 'pressA', mp3: 'pressA', beepB: 'pressB', mp3B: 'pressB' };
+document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => {
+  const k = b.dataset.ask, need = NEED[k], ran = !need || R.auto[need];
+  R.asks[k] = ran ? b.dataset.v : b.dataset.v + ' (시험 안 함)';
+  if (!ran) say('#unlockOut', (need === 'pressA' ? 'A' : 'B') + ' 단추가 아직 눌리지 않았습니다. 낭독기를 켰다면 단추를 고른 뒤 두 번 톡 누르세요.', false);
+  show();
+});
+const tick = (b, n) => { b.textContent = b.textContent.replace(/ ✓.*$/, '') + ` ✓ (${n}번 눌림)`; };
+let mp3 = null;
 R.auto.vibrateApi = 'vibrate' in navigator;
 R.auto.motionApi = typeof DeviceMotionEvent !== 'undefined';
 R.auto.motionNeedsPermission = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
@@ -84,6 +94,7 @@ function beep(pan = 0, f = 660) {
   o.start(); o.stop(ctx.currentTime + 0.55);
 }
 $('#unlock').onclick = async () => {
+  R.auto.pressA = (R.auto.pressA || 0) + 1; tick($('#unlock'), R.auto.pressA); show();
   try {
     // A: 게임(js/music.js)과 같이 audioSession을 건드리지 않는다 — 아이폰 무음 모드에서 효과음(Web Audio)이 나는지 본다
     R.auto.audioSessionTypeA = navigator.audioSession ? navigator.audioSession.type : 'none';
@@ -91,16 +102,23 @@ $('#unlock').onclick = async () => {
     await ctx.resume();
     R.auto.webAudioState = ctx.state;
     beep();
-    const a = new Audio('voice/p01.mp3');
+    if (mp3) mp3.pause();
+    const a = mp3 = new Audio('voice/p01.mp3');
     setTimeout(() => a.play().then(() => { R.auto.mp3Play = 'ok'; show(); }).catch(e => { R.auto.mp3Play = 'blocked: ' + e.name; show(); }), 700);
     say('#unlockOut', `소리 장치: ${ctx.state}. '삐' 다음에 녹음 목소리가 나야 합니다.`, ctx.state === 'running');
   } catch (e) { R.auto.webAudioError = String(e); say('#unlockOut', '소리를 켜지 못했습니다: ' + e, false); }
 };
-$('#unlockB').onclick = async () => {
-  if (!ctx) { say('#unlockOut', '먼저 A를 누르세요', false); return; }
-  if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; R.auto.audioSessionSetB = navigator.audioSession.type; } catch (e) { R.auto.audioSessionSetB = String(e); } } else R.auto.audioSessionSetB = 'none';
-  await ctx.resume(); beep(0, 880);
-  say('#unlockOut', `B: 무음 무시 설정 = ${R.auto.audioSessionSetB}. '삐'가 들렸나요?`);
+$('#unlockB').onclick = () => {
+  R.auto.pressB = (R.auto.pressB || 0) + 1; tick($('#unlockB'), R.auto.pressB); show();
+  try {
+    if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; R.auto.audioSessionSetB = navigator.audioSession.type; } catch (e) { R.auto.audioSessionSetB = String(e); } } else R.auto.audioSessionSetB = 'none';
+    const old = ctx; ctx = new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); if (old) old.close().catch(() => {});
+    setTimeout(() => { R.auto.webAudioStateB = ctx.state; beep(0, 880); show(); }, 200);
+    if (mp3) mp3.pause();
+    const a = mp3 = new Audio('voice/p01.mp3');
+    setTimeout(() => a.play().then(() => { R.auto.mp3PlayB = 'ok'; show(); }).catch(e => { R.auto.mp3PlayB = 'blocked: ' + e.name; show(); }), 900);
+    say('#unlockOut', `B: 무음 무시 설정 = ${R.auto.audioSessionSetB}. '삐' 다음에 녹음 목소리가 나야 합니다.`);
+  } catch (e) { R.auto.webAudioErrorB = String(e); say('#unlockOut', 'B 실패: ' + e, false); }
 };
 $('#pan').onclick = () => { if (!ctx) { say('#unlockOut', '먼저 1번 큰 단추를 누르세요', false); return; } beep(-1, 392); setTimeout(() => beep(1, 523), 800); };
 function voicesReady(ms = 3000) {
