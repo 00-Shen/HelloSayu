@@ -221,6 +221,7 @@ export function bindSkip() {
       finishBySkip(plan.trial, l, t, zoneOf);
       save();
       hooks.go(state.scene);   // 같은 장면을 다시 그리면 그 시련의 끝 쪽
+      l.skipTold = true;   // v2.3b(2026-11-22 USER '기본 점수만 받습니다를 매번 외쳐야 하나'): 점수 이야기는 처음 묻기에서 한 번만
       tell(V2().skipDone, true);
       return;
     }
@@ -233,7 +234,7 @@ export function bindSkip() {
     else { if (plan.to === 'listenGiant') l.filmSeen = true; name = C[plan.to] || ''; save(); hooks.go(plan.to); }
     tell(fill(V2().skipped, { to: name }), true);
   };
-  if (plan.trial) confirmTwice(b, V2().skipConfirm, V2().skipAsk, run);
+  if (plan.trial) confirmTwice(b, V2().skipConfirm, l.skipTold ? V2().skipAskAgain : V2().skipAsk, run);   // 처음 한 번은 길게(대신 마침 · 기본 점수 · 취소), 그다음은 짧게
   else b.onclick = run;
 }
 
