@@ -263,7 +263,7 @@ export function startView() {
   if (l.startView === 'settings') return settingsView();
   if (l.startView === 'about') return aboutView();
   // v2.1: QR로 들어오면 이 화면. 큰 '소리로 시작'(읽어 주기) · 낭독기 · 보면서 · 선생님용(장 고르기 · 설정) — 정거장 5개
-  // v2.1d: VoiceOver를 켠 채 '소리로 시작'을 고르면 기기 음성과 낭독기가 겹쳐 읽었다(USER iPhone 녹화 22:57) — 낭독기만 듣는 안내를 단추 이름 안에
+  // v2.1d: VoiceOver를 켠 채 '소리로 시작'을 고르면 기기 음성과 낭독기가 겹쳐 읽었다(USER iPhone 녹화 22:57) — 낭독기만 듣는 안내를 단추 이름 안에 · v2.1e(23:3x): USER 23:17 녹화에서 안내가 두 번 톡에 '화면 낭독기를 켜두어'까지만 읽혀 짧게
   return `<h1>${esc(LD().title)}</h1>
     <div class="listen-hero-box" aria-hidden="true"><img class="listen-hero" src="${IMG.sayu}" alt=""></div>
     <div class="start-choices">
