@@ -1,0 +1,82 @@
+/* 청동 전시실 (11주차) — 레이아웃과 옆 패널은 gallery-base.css(오디세이에서 옮긴 .ody-*)를 쓰고, 방마다 다른 것만 여기 둔다 */
+body.game-active[data-scene="gallery"]:before { background-image: radial-gradient(circle at 50% 10%, #2a2a24, #121310 55%, #070806); filter: none; }
+body.game-active[data-scene="gallery"] #scene { padding-top: 80px; padding-bottom: 28px; }
+
+.gal-stage { background: radial-gradient(ellipse at 50% 30%, #23241f, #10110e 70%); }
+/* 자막: 사유의 말은 원래 게임의 대사 상자(.dig-coach·.fiction)처럼 보라 줄, 안내는 사실 상자(.facts)처럼 초록 줄 */
+/* 무대 밖 아래에 둔다: 휴대폰의 작은 무대에서 고리와 땅을 가리지 않게 */
+.gal-cap { margin: 12px 0 0; padding: 10px 14px; border-left: 3px solid #b99be8; border-radius: 0 12px 12px 0; background: #2a2238e6; color: var(--ink); font-size: .92rem; line-height: 1.6; min-height: 1.5em; box-shadow: 0 10px 30px #0008; }
+.gal-cap:empty { display: none; }
+.gal-cap b { margin-right: 8px; color: #e5bceb; font-size: .72rem; font-weight: 900; letter-spacing: .08em; }
+.gal-cap[data-who="guide"] { border-left-color: var(--green); background: #182b21e6; }
+.gal-cap[data-who="guide"] b { color: var(--green); }
+.gal-cap small { color: var(--muted); font-weight: 600; }
+.gal-main { display: grid; gap: 0; }
+.gal-exit { margin-top: 14px; }
+
+/* 1방: 들보에 매단 다섯 고리 */
+.gal-hall { position: absolute; inset: 0; }
+.gal-beam { position: absolute; height: 2.4%; border-radius: 6px; background: linear-gradient(#5b4a35, #33281b); box-shadow: 0 6px 14px #0009; }
+.gal-cord { position: absolute; width: 2px; margin-left: -1px; background: linear-gradient(#8d7a5c, #5c4f3b); }
+.gal-ring { position: absolute; aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transform-origin: 50% -40%; --decay: 3s; }
+.gal-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.gal-ring .band { fill: none; stroke: var(--ring); filter: drop-shadow(0 4px 6px #000a); transition: stroke .25s linear; }
+.gal-ring .pore { fill: #1d1a14; opacity: .85; }
+.gal-icon { position: absolute; inset: 0; display: grid; place-items: center; color: #e8dcc0aa; font-size: clamp(.7rem, 1.6vw, 1.3rem); pointer-events: none; }
+.gal-ring[data-ring="hand"] .gal-icon { font-size: .7rem; }
+.gal-ring:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+.gal-ring.sel .band { filter: drop-shadow(0 0 10px #ffd98a66) drop-shadow(0 4px 6px #000a); }
+.gal-ring.ringing { animation: gal-swing var(--decay) cubic-bezier(.2, .7, .3, 1) both; }
+.gal-ring.ringing .band { filter: drop-shadow(0 0 16px #ffe4a3aa) drop-shadow(0 4px 6px #000a); }
+.gal-ring.ringing.still { animation: none; transform: rotate(2.2deg); }
+.gal-ring.held::after { content: '✋'; position: absolute; left: 50%; top: -2%; transform: translate(-50%, -60%); font-size: 1.5rem; filter: drop-shadow(0 2px 4px #000); }
+.gal-plate { position: absolute; left: 0; right: 0; top: 75.5%; margin: 0; text-align: center; color: #cbbf9f; font-size: .76rem; letter-spacing: .02em; }
+@keyframes gal-swing { 0% { transform: rotate(0); } 8% { transform: rotate(3.4deg); } 22% { transform: rotate(-2.4deg); } 40% { transform: rotate(1.5deg); } 62% { transform: rotate(-.8deg); } 100% { transform: rotate(0); } }
+
+.gal-list { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+/* 두드린 고리는 원래 게임의 '끝냄' 표시처럼 초록 테두리 */
+.gal-list .chip-btn.on { border-color: #4d9c76; background: #214737; color: #dff7e9; }
+.gal-sel { margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); }
+.gal-sel b { color: var(--gold); }
+.gal-sel small { display: block; color: var(--muted); margin-top: 2px; }
+.gal-sel p { margin: 6px 0 8px; font-size: .9rem; line-height: 1.55; }
+
+/* 2방: 어두운 땅과 손끝 아래 작은 원 (드 마리아의 지름 5 cm 단면처럼) */
+.gal-field { position: absolute; inset: 0; cursor: crosshair; touch-action: none; outline: none; --cx: 50%; --cy: 50%;
+  background: radial-gradient(circle at var(--cx) var(--cy), #e9c98a 0, #a07a46 1.6%, #4a3622 2.6%, #050504 3.6%); }
+.gal-field:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
+.gal-field.blind { background: #000; cursor: none; }
+.gal-hole { position: absolute; left: var(--cx); top: var(--cy); width: 0; height: 0; }
+.gal-pulse { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ffe2a0; opacity: 0; pointer-events: none; }
+.gal-pulse.go { animation: gal-pulse var(--life, 600ms) ease-out forwards; }
+.gal-pulse.still { opacity: calc(.75 - var(--k) * .22); transform: scale(calc(2 + var(--k) * 2.2)); }
+.gal-field.blind .gal-hole, .gal-field.blind .gal-mark, .gal-field.blind .gal-pulse { display: none; }
+@keyframes gal-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(5.5); } }
+.gal-mark { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; color: #ffe9b3; font-size: .72rem; font-weight: 800; text-shadow: 0 1px 6px #000; pointer-events: none; }
+.gal-mark i { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #fff3c4, #d9a441 60%, transparent 72%); box-shadow: 0 0 18px #ffd98a; }
+.gal-blindnote { position: absolute; left: 0; right: 0; top: 46%; margin: 0; text-align: center; color: #ffffff3d; font-size: .8rem; }
+.gal-read { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 8px 0; font-size: .88rem; }
+.gal-read dt { color: var(--muted); }
+.gal-read dd { margin: 0; font-weight: 700; }
+.gal-bar { display: inline-block; width: 100%; height: 8px; border-radius: 999px; background: #ffffff14; overflow: hidden; vertical-align: middle; }
+.gal-bar i { display: block; height: 100%; background: linear-gradient(90deg, #6b5a35, var(--gold)); }
+
+@media (max-width: 900px) {
+  .gal-plate { top: 71%; font-size: .66rem; padding: 0 8px; }
+  .gal-cap { font-size: .82rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gal-ring.ringing { animation: none; }
+  .gal-pulse.go { animation-duration: 1ms; }
+}
+
+body.high-contrast .gal-cap, body.high-contrast .gal-cap[data-who="guide"] { background: #000; border-left-color: #fff; }
+
+/* 이야기 속 입구(galIntro): 들어가기와 돌아가기를 나란히 */
+.pov-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+.pov-actions .pov-continue { margin: 10px 0 0; }
+.pov-actions .btn.secondary { margin-top: 10px; min-height: 54px; background: #0b100dcc; }
+@media (max-width: 760px) { .pov-actions .btn.secondary { width: 100%; } }
+
+/* 한국어 꼬리표가 낱말 중간(“인/지”)에서 끊기지 않게 */
+body[data-scene="gallery"] .eyebrow { word-break: keep-all; overflow-wrap: anywhere; }

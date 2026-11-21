@@ -1,0 +1,193 @@
+{
+  "_note": "점수와 엔딩(2026-11-18). 솜씨 100 + 마음 100 = 200점. max는 그 칸의 만점, minus는 실수 한 번에 빼는 점수(칸마다 0점 아래로는 내려가지 않는다). 숫자를 고치면 js/score.js가 그대로 따른다. 판마다 솜씨 만점의 합은 100이어야 한다(tests/score.test.mjs).",
+  "skill": {
+    "original": {
+      "dig": {
+        "max": 15,
+        "minus": {
+          "stolen": 3
+        }
+      },
+      "study": {
+        "max": 15,
+        "minus": {
+          "wrong": 3
+        }
+      },
+      "reconstruct": {
+        "max": 20,
+        "minus": {
+          "bounced": 2,
+          "caught": 4
+        }
+      },
+      "cast": {
+        "max": 15,
+        "minus": {
+          "repairs": 3,
+          "recast": 5
+        }
+      },
+      "scylla": {
+        "max": 20,
+        "minus": {
+          "bites": 3,
+          "swallowed": 5
+        }
+      },
+      "underworld": {
+        "max": 15,
+        "minus": {
+          "misses": 2
+        }
+      }
+    },
+    "listen": {
+      "giant": {
+        "max": 50,
+        "minus": {
+          "caught": 5,
+          "wrong": 3
+        }
+      },
+      "room2": {
+        "max": 50,
+        "minus": {
+          "misses": 5
+        }
+      }
+    }
+  },
+  "heart": {
+    "offer": {
+      "max": 50,
+      "erased": 20
+    },
+    "reach": {
+      "max": 30,
+      "minus": {
+        "touches": 10
+      }
+    },
+    "warm": {
+      "max": 20,
+      "full": 0.95,
+      "partial": 10
+    }
+  },
+  "endings": {
+    "best": {
+      "min": 150,
+      "refusedFirst": true
+    },
+    "good": {
+      "min": 100
+    }
+  },
+  "text": {
+    "eyebrow": "해 뜨기 직전 · 사유자의 기록",
+    "title": "점수 확인",
+    "lead": "솜씨는 시련을 얼마나 실수 없이 넘었는지, 마음은 사유를 어떻게 대했는지입니다. 점수에 따라 엔딩이 셋으로 갈립니다.",
+    "skill": "솜씨",
+    "heart": "마음",
+    "points": "{n}/{max}점",
+    "pointsSpoken": "{max}점 중 {n}점",
+    "total": "합계 {n}/{max}점",
+    "totalSpoken": "합계 {max}점 중 {n}점",
+    "stars": "별 {n}개",
+    "starsSpoken": "별 세 개 중 {n}개",
+    "endingIs": "이번 엔딩",
+    "toEnding": "엔딩 보기",
+    "again": "처음부터 다시 해서 다른 엔딩 보기",
+    "toGarden": "벚꽃 정원으로",
+    "toResult": "점수 다시 보기",
+    "replayResult": "점수와 엔딩 다시 보기",
+    "next": {
+      "best": "가장 좋은 엔딩입니다. 흠을 지우지 않고, 닿을 듯 멈춘 그 자리를 끝까지 지켰습니다.",
+      "good": "최고 엔딩까지: {min}점 이상이면서 유태양의 제안을 처음부터 거절하기.",
+      "normal": "좋음 엔딩까지: {min}점 이상. 실수를 줄이고, 사유의 손에 닿지 않게 머물러 보세요."
+    },
+    "rows": {
+      "dig": {
+        "label": "쌓인 흙",
+        "detail": "빼앗긴 조각 {stolen}번"
+      },
+      "study": {
+        "label": "사이렌의 노래",
+        "detail": "틀린 판독 · 노래에 넘어감 {wrong}번"
+      },
+      "reconstruct": {
+        "label": "폴리페모스의 벽",
+        "detail": "튕겨 나온 조각 {bounced}번 · 거인에게 들킴 {caught}번"
+      },
+      "cast": {
+        "label": "히드라",
+        "detail": "결함을 고친 횟수 {repairs}번 · 다시 부음 {recast}번"
+      },
+      "scylla": {
+        "label": "스킬라와 카립디스",
+        "detail": "스킬라에게 물림 {bites}번 · 소용돌이에 삼켜짐 {swallowed}번"
+      },
+      "underworld": {
+        "label": "저승의 케르베로스",
+        "detail": "헛짚음 {misses}번"
+      },
+      "giant": {
+        "label": "외눈 거인의 동굴",
+        "detail": "거인에게 들킴 {caught}번 · 자리 틀림 {wrong}번"
+      },
+      "room2": {
+        "label": "청동 전시실 2방",
+        "detail": "헛파기 {misses}번"
+      },
+      "offer": {
+        "label": "유태양의 제안",
+        "detail": "처음부터 거절함",
+        "detailErased": "흠을 {erased}번 지웠다가 돌아옴"
+      },
+      "reach": {
+        "label": "닿을 듯 멈추기",
+        "detail": "사유의 손에 닿음 {touches}번"
+      },
+      "warm": {
+        "label": "청동 데우기(전시실 1방)",
+        "detail": "손으로 끝까지 데움",
+        "detailPartial": "반쯤 데움 · 손을 4초 얹으면 끝까지 데워진다",
+        "detailNone": "데우지 않음"
+      }
+    },
+    "skippedDetail": "건너뛴 시련이라 0점"
+  },
+  "endings_text": {
+    "best": {
+      "name": "최고 엔딩",
+      "title": "앞으로도 쭉",
+      "narration": "해가 뜬다. 유리장 문이 활짝 열리고, 사유가 두 손으로 당신의 녹슨 손을 감싼다. 이마를 손등에 살며시 기대고, 눈을 감은 채 웃는다. 벚꽃잎이 두 사람 둘레를 돈다.",
+      "line": "누르지도, 떼지도 않고 곁에 있어 줘서 고마워. 좋아해. 앞으로도 쭉.",
+      "video": "video/ending-best.mp4",
+      "captions": "video/ending-best.vtt",
+      "videoAd": "video/ending-best-ad.mp4",
+      "captionsAd": "video/ending-best-ad.vtt"
+    },
+    "good": {
+      "name": "좋음 엔딩",
+      "title": "흠까지 알아보는 사이",
+      "narration": "사유가 둥근 받침대에서 일어나 당신에게 걸어온다. 맞잡은 손끝에서 푸른 녹이 따뜻한 금빛으로 번진다. 사유의 눈가가 젖은 채 웃고 있다.",
+      "line": "이제 너를 알아볼 수 있어. 네 손의 흠까지 전부.",
+      "video": "video/ending-good.mp4",
+      "captions": "video/ending-good.vtt",
+      "videoAd": "video/ending-good-ad.mp4",
+      "captionsAd": "video/ending-good-ad.vtt"
+    },
+    "normal": {
+      "name": "보통 엔딩",
+      "title": "다음 밤의 약속",
+      "narration": "새벽 벚꽃 아래, 사유가 받침대에 앉아 당신을 보고 웃는다. 두 손이 서로를 향해 뻗다가, 꽃잎 한 장만큼의 틈을 두고 멈춘다. 해가 떠오르자 사유가 작게 웃음을 터뜨린다.",
+      "line": "또 와 줄 거지? 그때도 이 자리에서, 닿을 듯 말 듯.",
+      "video": "video/ending-normal.mp4",
+      "captions": "video/ending-normal.vtt",
+      "videoAd": "video/ending-normal-ad.mp4",
+      "captionsAd": "video/ending-normal-ad.vtt"
+    }
+  }
+}

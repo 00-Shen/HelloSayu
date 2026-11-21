@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171b18">
+  <meta name="description" content="금동 반가사유상을 발굴하고 도구로 감별하고 밀랍주조로 직접 만들어 보는 웹 기반 serious game">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/character/sayu-reference-web.png" as="image" type="image/png">
+  <title>반가워, 사유</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pov.css">
+  <link rel="stylesheet" href="css/game.css">
+  <link rel="stylesheet" href="css/trials.css">
+  <link rel="stylesheet" href="css/gallery-base.css">
+  <link rel="stylesheet" href="css/gallery.css">
+</head>
+<body>
+  <a class="skip" href="#scene">게임 화면으로 바로가기</a>
+  <header class="topbar">
+    <button class="brand" id="homeBtn" type="button">사유상 복원 프로젝트 <small>발굴 · 감별 · 주조</small><span class="sr-only" id="homeWhere"></span></button>
+    <div class="top-actions">
+      <button id="contrastBtn" class="icon-btn" type="button" aria-pressed="false">◐ 고대비</button>
+      <button id="audioBtn" class="icon-btn" type="button" aria-pressed="true">🔊 음성 켬</button>
+      <button id="bgmBtn" class="icon-btn" type="button" aria-pressed="false">♫ BGM 끔</button>
+      <button id="helpBtn" class="icon-btn" type="button">? 조작법</button>
+    </div>
+  </header>
+
+  <div class="progress-shell" aria-label="게임 진행 단계">
+    <ol id="stageProgress" class="stage-progress"></ol>
+  </div>
+
+  <aside id="gameHud" class="game-hud" hidden aria-label="게임 상태">
+    <div class="hud-character"><img src="assets/character/sayu-reference-web.png" alt=""><span><b>사유와의 인연</b><small id="affectionText">호감도 0/100</small></span></div>
+    <div class="affection-meter" role="meter" aria-label="사유 호감도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="affectionBar"></i></div>
+    <div class="hud-chip" id="focusWrap" hidden><span>집중력</span><b id="focusText">-</b></div>
+    <div class="hud-chip"><span>도감</span><b id="codexText">0/5</b></div>
+    <div class="hud-objective"><span>현재 목표</span><b id="objectiveText">이야기 시작</b></div>
+  </aside>
+
+  <main id="scene" tabindex="-1"></main>
+  <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+  <div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="modal">
+    <div id="modalBody"></div>
+    <button class="btn" id="modalClose" type="button">닫기</button>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

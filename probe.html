@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>휴대폰 확인 · 반가워, 사유</title>
+<style>
+  :root { --bg:#171b18; --ink:#f4efe2; --gold:#e9c46a; --line:#4a5446; --ok:#7fd18b; --no:#ff8a7a; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:18px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:16px 16px 80px; }
+  h1 { font-size:1.5rem; margin:.2em 0 .4em; } h2 { font-size:1.15rem; margin:1.4em 0 .3em; color:var(--gold); }
+  button { font:inherit; font-weight:800; min-height:56px; padding:10px 18px; margin:6px 6px 6px 0; border-radius:14px; border:2px solid var(--line); background:#2a3229; color:var(--ink); }
+  button.big { width:100%; min-height:120px; font-size:1.3rem; background:var(--gold); color:#28200e; border-color:var(--gold); }
+  button:focus-visible { outline:4px solid #fff; outline-offset:3px; }
+  #pad { min-height:180px; border:3px dashed var(--gold); border-radius:18px; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; touch-action:none; user-select:none; }
+  .r { margin:.2em 0; } .ok { color:var(--ok); } .no { color:var(--no); }
+  textarea { width:100%; min-height:200px; font:14px/1.4 monospace; background:#0f120f; color:var(--ink); border:1px solid var(--line); border-radius:10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>휴대폰 확인 (시험용)</h1>
+  <p>「반가워, 사유 · 소리로 만나는 판」이 이 휴대폰에서 어디까지 되는지 봅니다. 위에서부터 차례로 누르고, 끝에 나온 결과 글을 복사해 보내 주세요.</p>
+
+  <h2>0. 지금 상태 적기</h2>
+  <p>화면 낭독기(VoiceOver · TalkBack)가 켜져 있나요?</p>
+  <button data-note="sr" data-v="on">켜져 있다</button><button data-note="sr" data-v="off">꺼져 있다</button>
+  <p>아이폰이라면 옆의 무음 스위치는?</p>
+  <button data-note="silent" data-v="on">무음(주황색 보임)</button><button data-note="silent" data-v="off">소리 켬</button><button data-note="silent" data-v="na">아이폰 아님</button>
+
+  <h2>1. 첫 누름으로 소리 켜기</h2>
+  <p>휴대폰 브라우저는 사람이 한 번 누르기 전에는 소리를 내지 못하게 합니다. 아래 큰 단추를 누르면 '삐' 소리, 그다음 녹음 목소리가 납니다.</p>
+  <button class="big" id="unlock">여기를 눌러 소리 켜기</button>
+  <p class="r" id="unlockOut" role="status"></p>
+  <button data-ask="beep" data-v="yes">삐 소리 들림</button><button data-ask="beep" data-v="no">안 들림</button><br>
+  <button data-ask="mp3" data-v="yes">녹음 목소리 들림</button><button data-ask="mp3" data-v="no">안 들림</button>
+  <p>이어폰을 끼고: 왼쪽, 그다음 오른쪽에서 나나요?</p>
+  <button id="pan">왼쪽·오른쪽 소리</button><button data-ask="pan" data-v="yes">맞게 들림</button><button data-ask="pan" data-v="no">아님</button>
+
+  <h2>2. 기기 음성(글 읽어 주기)</h2>
+  <button id="tts">한국어로 읽어 주기</button>
+  <p class="r" id="ttsOut" role="status"></p>
+  <button data-ask="tts" data-v="yes">들림</button><button data-ask="tts" data-v="no">안 들림</button>
+
+  <h2>3. 진동</h2>
+  <button id="vib">진동 울리기</button>
+  <p class="r" id="vibOut" role="status"></p>
+  <button data-ask="vib" data-v="yes">떨림 느낌</button><button data-ask="vib" data-v="no">없음</button>
+
+  <h2>4. 흔들기</h2>
+  <button id="motion">흔들기 허락받고 시작</button>
+  <p class="r" id="motionOut" role="status"></p>
+
+  <h2>5. 손동작</h2>
+  <p>아래 칸에서 한 번 누르기, 두 번 누르기, 길게 누르기, 옆으로 쓸기를 해 보세요. 칸이 받은 동작이 적힙니다.</p>
+  <div id="pad" role="button" tabindex="0" aria-label="손동작 시험 칸">여기에서 해 보세요</div>
+  <p class="r" id="padOut" role="status"></p>
+
+  <h2>결과</h2>
+  <button id="copy">결과 복사</button>
+  <textarea id="out" aria-label="결과 글" readonly></textarea>
+</main>
+<script>
+const R = { at: new Date().toISOString(), ua: navigator.userAgent, https: location.protocol === 'https:', notes: {}, asks: {}, auto: {}, pad: {} };
+const $ = s => document.querySelector(s);
+const show = () => { $('#out').value = JSON.stringify(R, null, 1); };
+const say = (id, t, good) => { const el = $(id); el.textContent = t; el.className = 'r ' + (good === undefined ? '' : good ? 'ok' : 'no'); show(); };
+document.querySelectorAll('[data-note]').forEach(b => b.onclick = () => { R.notes[b.dataset.note] = b.dataset.v; show(); b.blur(); });
+document.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => { R.asks[b.dataset.ask] = b.dataset.v; show(); });
+R.auto.vibrateApi = 'vibrate' in navigator;
+R.auto.motionApi = typeof DeviceMotionEvent !== 'undefined';
+R.auto.motionNeedsPermission = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+R.auto.speech = 'speechSynthesis' in window;
+R.auto.audioSession = 'audioSession' in navigator;
+let ctx = null;
+function beep(pan = 0, f = 660) {
+  const o = ctx.createOscillator(), g = ctx.createGain(), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+  o.frequency.value = f; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+  o.connect(g); if (p) { p.pan.value = pan; g.connect(p); p.connect(ctx.destination); } else g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + 0.55);
+}
+$('#unlock').onclick = async () => {
+  try {
+    if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; R.auto.audioSessionSet = true; } catch (e) { R.auto.audioSessionSet = String(e); } }
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    await ctx.resume();
+    R.auto.webAudioState = ctx.state;
+    beep();
+    const a = new Audio('voice/p01.mp3');
+    setTimeout(() => a.play().then(() => { R.auto.mp3Play = 'ok'; show(); }).catch(e => { R.auto.mp3Play = 'blocked: ' + e.name; show(); }), 700);
+    say('#unlockOut', `소리 장치: ${ctx.state}. '삐' 다음에 녹음 목소리가 나야 합니다.`, ctx.state === 'running');
+  } catch (e) { R.auto.webAudioError = String(e); say('#unlockOut', '소리를 켜지 못했습니다: ' + e, false); }
+};
+$('#pan').onclick = () => { if (!ctx) { say('#unlockOut', '먼저 1번 큰 단추를 누르세요', false); return; } beep(-1, 392); setTimeout(() => beep(1, 523), 800); };
+$('#tts').onclick = () => {
+  if (!('speechSynthesis' in window)) { say('#ttsOut', '기기 음성 없음', false); return; }
+  const vs = speechSynthesis.getVoices(); R.auto.koVoices = vs.filter(v => /^ko/i.test(v.lang)).length; R.auto.allVoices = vs.length;
+  const u = new SpeechSynthesisUtterance('안녕, 사유야. 반가워.'); u.lang = 'ko-KR';
+  u.onstart = () => { R.auto.ttsStart = true; show(); }; u.onend = () => { R.auto.ttsEnd = true; show(); }; u.onerror = e => { R.auto.ttsError = e.error; show(); };
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+  say('#ttsOut', `한국어 목소리 ${R.auto.koVoices}개 (전체 ${vs.length}개)`);
+};
+$('#vib').onclick = () => {
+  if (!('vibrate' in navigator)) { say('#vibOut', '이 브라우저는 진동 기능(Vibration API)이 없습니다', false); return; }
+  R.auto.vibrateReturned = navigator.vibrate([200, 100, 200]); say('#vibOut', '진동을 보냈습니다: ' + R.auto.vibrateReturned, true);
+};
+$('#motion').onclick = async () => {
+  try {
+    if (R.auto.motionNeedsPermission) R.auto.motionPermission = await DeviceMotionEvent.requestPermission();
+    let peak = 0, shakes = 0, last = 0;
+    window.addEventListener('devicemotion', e => {
+      const a = e.accelerationIncludingGravity || e.acceleration; if (!a) return;
+      const m = Math.hypot(a.x || 0, a.y || 0, a.z || 0); peak = Math.max(peak, m); R.auto.motionPeak = Math.round(peak * 10) / 10;
+      if (m > 25 && performance.now() - last > 600) { last = performance.now(); shakes++; R.auto.shakes = shakes; say('#motionOut', `흔들기 ${shakes}번 감지`, true); }
+    });
+    say('#motionOut', `허락: ${R.auto.motionPermission || '물을 필요 없음'}. 이제 휴대폰을 흔들어 보세요.`);
+  } catch (e) { R.auto.motionError = String(e); say('#motionOut', '흔들기를 쓸 수 없습니다: ' + e, false); }
+};
+const pad = $('#pad'); let down = null, taps = 0, tapTimer = 0;
+const mark = k => { R.pad[k] = (R.pad[k] || 0) + 1; say('#padOut', Object.entries(R.pad).map(([a, b]) => `${a} ${b}`).join(' · ')); };
+pad.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; mark('pointerdown'); });
+pad.addEventListener('pointerup', e => {
+  if (!down) return; const dx = e.clientX - down.x, dt = performance.now() - down.t;
+  if (Math.abs(dx) > 50) mark(dx > 0 ? 'swipeRight' : 'swipeLeft'); else if (dt > 600) mark('longPress');
+  down = null;
+});
+pad.addEventListener('click', () => { mark('click'); taps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => { if (taps >= 2) mark('doubleTapAsTwoClicks'); taps = 0; }, 400); });
+pad.addEventListener('dblclick', () => mark('dblclick'));
+pad.addEventListener('contextmenu', e => { e.preventDefault(); mark('contextmenu'); });
+pad.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') mark('key-' + (e.key === ' ' ? 'Space' : e.key)); });
+$('#copy').onclick = async () => { show(); try { await navigator.clipboard.writeText($('#out').value); $('#copy').textContent = '복사했습니다'; } catch { $('#out').select(); $('#copy').textContent = '글을 길게 눌러 복사하세요'; } };
+show();
+</script>
+</body>
+</html>
