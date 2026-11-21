@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무음 모드 읽어 주기 시험</title>
+<style>
+  :root { --bg:#151a16; --ink:#f3efe2; --gold:#e2b04c; --line:#56604f; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:18px/1.55 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:16px; }
+  h1 { font-size:1.35rem; margin:.2em 0 .4em; }
+  button { font:inherit; font-weight:800; width:100%; min-height:64px; margin:8px 0; border-radius:14px; border:2px solid var(--line); background:#2a3229; color:var(--ink); }
+  button.go { background:var(--gold); color:#28200e; border-color:var(--gold); }
+  .r { min-height:1.4em; margin:2px 0 10px; color:#cfd8c6; font-size:.95rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>아이폰 무음 모드에서 읽어 주기가 나는지</h1>
+  <p><b>무음 스위치를 켠 채로</b>(주황색 보임) 1 → 2 → 3 → 4 차례로 누르고, 몇 번에서 목소리가 들렸는지 알려 주세요. 화면 낭독기는 끄고 하세요.</p>
+  <button class="go" id="b1">1. 그대로 읽기 (지금 게임과 같음)</button>
+  <p class="r" id="o1" role="status"></p>
+  <button class="go" id="b2">2. 소리 없는 소리를 틀어 두고 읽기</button>
+  <p class="r" id="o2" role="status"></p>
+  <button class="go" id="b3">3. 그 상태로 한 번 더 읽기</button>
+  <p class="r" id="o3" role="status"></p>
+  <button class="go" id="b4">4. 소리 장치를 켜 두고 읽기</button>
+  <p class="r" id="o4" role="status"></p>
+  <button id="stop">멈추기</button>
+  <p class="r" id="info"></p>
+</main>
+<script>
+// 2026-11-21 23:2x N1a: 23:09 아이폰 녹화(무음 모드) — 기기 음성만 나오는 쪽이 통째로 조용했다. 무음 모드에서도 기기 음성을 낼 방법을 시험한다.
+//  1 = 게임 그대로(audioSession 'playback'만), 2·3 = 소리 없는 <audio>를 반복 재생해 둔 채, 4 = Web Audio를 켜 둔 채
+const $ = s => document.querySelector(s);
+const info = () => { $('#info').textContent = `audioSession: ${navigator.audioSession ? navigator.audioSession.type : '없음'} · 한국어 목소리 ${speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)).length}개`; };
+const playback = () => { try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {} };
+const koVoice = () => { const ko = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)); return ko.find(v => /Yuna|Heami|Sora|SunHi|Google.*한국|Natural|Premium/i.test(v.name)) || ko[0] || null; };
+function speak(text, out) {
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.voice = koVoice();
+  u.onstart = () => { $(out).textContent += ' · 시작'; }; u.onend = () => { $(out).textContent += ' · 끝'; }; u.onerror = e => { $(out).textContent += ' · 오류 ' + e.error; };
+  speechSynthesis.cancel(); speechSynthesis.speak(u); $(out).textContent = '읽기 요청'; info();
+}
+// 1초짜리 무음 WAV(8 kHz, 16비트, 0으로 채움)
+function silentUrl() {
+  const n = 8000, b = new ArrayBuffer(44 + n * 2), d = new DataView(b), w = (o, s) => [...s].forEach((c, i) => d.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); d.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); d.setUint32(16, 16, true); d.setUint16(20, 1, true); d.setUint16(22, 1, true);
+  d.setUint32(24, 8000, true); d.setUint32(28, 16000, true); d.setUint16(32, 2, true); d.setUint16(34, 16, true); w(36, 'data'); d.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
+let keeper = null, ctx = null, osc = null;
+$('#b1').onclick = () => { playback(); speak('하나. 그대로 읽습니다.', '#o1'); };
+$('#b2').onclick = () => {
+  playback();
+  if (!keeper) { keeper = new Audio(silentUrl()); keeper.loop = true; keeper.setAttribute('playsinline', ''); }
+  keeper.play().then(() => { $('#o2').textContent += ' · 무음 소리 재생 중'; }).catch(e => { $('#o2').textContent += ' · 무음 소리 실패 ' + e.name; });
+  speak('둘. 소리 없는 소리를 틀어 두고 읽습니다.', '#o2');
+};
+$('#b3').onclick = () => { speak('셋. 그 상태로 한 번 더 읽습니다.', '#o3'); $('#o3').textContent += keeper && !keeper.paused ? ' (무음 소리 재생 중)' : ' (무음 소리 꺼짐 — 2를 먼저)'; };
+$('#b4').onclick = () => {
+  playback();
+  try {
+    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); const g = ctx.createGain(); g.gain.value = 0.0001; osc = ctx.createOscillator(); osc.frequency.value = 30; osc.connect(g).connect(ctx.destination); osc.start(); }
+    ctx.resume();
+  } catch (e) { $('#o4').textContent = '소리 장치 실패 ' + e; }
+  speak('넷. 소리 장치를 켜 두고 읽습니다.', '#o4');
+};
+$('#stop').onclick = () => { speechSynthesis.cancel(); if (keeper) keeper.pause(); if (ctx) ctx.suspend(); info(); };
+speechSynthesis.getVoices(); speechSynthesis.addEventListener?.('voiceschanged', info); info();
+</script>
+</body>
+</html>
