@@ -52,7 +52,8 @@
   <p class="r" id="motionOut" role="status"></p>
 
   <h2>5. 손동작</h2>
-  <p>아래 칸에서 한 번 누르기, 두 번 누르기, 길게 누르기, 옆으로 쓸기를 해 보세요. 칸이 받은 동작이 적힙니다.</p>
+  <p>아래 칸에서 한 번 누르기, 두 번 누르기, 길게 누르기, 옆으로 쓸기를 해 보세요. 칸이 받은 동작이 적힙니다.
+    화면 낭독기가 켜져 있으면 칸을 한 번 눌러 고른 뒤 <b>두 번 누르기</b>도 꼭 해 보세요(게임의 모든 단추는 이것으로 눌립니다).</p>
   <div id="pad" role="button" tabindex="0" aria-label="손동작 시험 칸">여기에서 해 보세요</div>
   <p class="r" id="padOut" role="status"></p>
 
@@ -95,10 +96,14 @@ $('#pan').onclick = () => { if (!ctx) { say('#unlockOut', '먼저 1번 큰 단�
 $('#tts').onclick = () => {
   if (!('speechSynthesis' in window)) { say('#ttsOut', '기기 음성 없음', false); return; }
   const vs = speechSynthesis.getVoices(); R.auto.koVoices = vs.filter(v => /^ko/i.test(v.lang)).length; R.auto.allVoices = vs.length;
-  const u = new SpeechSynthesisUtterance('안녕, 사유야. 반가워.'); u.lang = 'ko-KR';
+  // 게임(js/core.js preferredVoice)과 같은 방법으로 한국어 목소리를 직접 고른다. lang만 주면 iPhone은 기기 언어의 목소리로 읽는다(2026-11-21 실측)
+  const ko = vs.filter(v => /^ko/i.test(v.lang));
+  const pick = ko.find(v => /Yuna|Heami|Sora|SunHi|Google.*한국|Natural|Premium/i.test(v.name)) || ko[0] || null;
+  R.auto.ttsVoice = pick ? pick.name + ' (' + pick.lang + ')' : 'none';
+  const u = new SpeechSynthesisUtterance('안녕, 사유야. 반가워.'); u.lang = 'ko-KR'; u.voice = pick;
   u.onstart = () => { R.auto.ttsStart = true; show(); }; u.onend = () => { R.auto.ttsEnd = true; show(); }; u.onerror = e => { R.auto.ttsError = e.error; show(); };
   speechSynthesis.cancel(); speechSynthesis.speak(u);
-  say('#ttsOut', `한국어 목소리 ${R.auto.koVoices}개 (전체 ${vs.length}개)`);
+  say('#ttsOut', `한국어 목소리 ${R.auto.koVoices}개 (전체 ${vs.length}개) · 고른 목소리: ${R.auto.ttsVoice}`);
 };
 $('#vib').onclick = () => {
   if (!('vibrate' in navigator)) { say('#vibOut', '이 브라우저는 진동 기능(Vibration API)이 없습니다', false); return; }
