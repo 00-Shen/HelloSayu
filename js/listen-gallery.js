@@ -8,7 +8,7 @@ import { RINGS, ROOMS, ringVib, cue, strikeSound, stopRing, ping, chime, lowThud
 import { LINES } from './gallery-lines.js';
 import { fill } from './trials-rules.js';
 import { TRACES, moveCell, sameCell, cellXY, nearLevel, nextTrace, warmStep, WARM_GOAL, WARM_FULL, room1Done, galTodo, DIR_ORDER } from './listen-rules.js';
-import { LD, V2, IMG, text, tell, voice, bindReplay, bindHush, head, howtoPage, bindSampleCycle, skipHTML, bindSkip, cardHTML, replayHTML } from './listen.js';
+import { LD, V2, IMG, text, tell, tellThen, reading, voice, bindReplay, bindHush, head, howtoPage, bindSampleCycle, skipHTML, bindSkip, cardHTML, replayHTML } from './listen.js';
 // v2(2026-11-21): 한 페이지 5개 이하. 1방은 고리 다섯 × 단추 셋(15개) 대신 '다음 고리' 한 단추로 고리를 바꾸고 '두드리기' · '손 얹기'.
 // 2방은 방향 단추 넷 대신 '방향 바꾸기'와 '한 칸 가기'(PC는 방향키도 그대로). 들머리와 하는 법은 따로 한 쪽씩.
 
@@ -109,7 +109,7 @@ function handToggle(id) {
     log('gal_hand_off', { id, warm: +(s.warm[id] || 0).toFixed(2) });
   } else {
     if (stopRing(id, 0.12)) { s.damped++; tell(GL().room1.damped, true); }
-    vibrate([25]);
+    vibrate([25]); pluckSfx(220, { gain: 0.12, seconds: 0.25 });   // v2.1: 떨림만으로 알리지 않는다(아이폰은 떨지 않는다) — 손을 얹는 낮고 부드러운 소리
     s.hand = id;
     log('gal_hand', { id });
     startWarm();
@@ -208,7 +208,8 @@ function dig() {
   hooks.render();
   const d = $('#galDesc'); if (d) d.textContent = LINES[t.id];
   // 녹음 목소리를 저절로 듣기로 한 사람에게만 녹음으로 읽고, 아니면 해설 전체를 글로 알린다(낭독기가 읽는다)
-  if (state.listen.autoVoice && hasRecording('guide', LINES[t.id])) { tell(GL().room2.found[t.id], true); voice({ who: 'guide', text: LINES[t.id] }); }
+  // v2.1 읽어 주기: 찾았다는 알림 다음에 영감의 해설(녹음, 없으면 해설 목소리)을 이어서
+  if (reading()) tellThen(GL().room2.found[t.id], { who: 'guide', text: LINES[t.id] });
   else tell(`${GL().room2.found[t.id]} ${LINES[t.id]}`, true);
 }
 
@@ -239,7 +240,7 @@ function nextRing() {
   if (first) s.heard.push(r.id);
   const said = fill(V2().room1.ringSaid, { name: ringName(r.id), size: fill(GL().room1.size, { d: r.d }) });
   if (first && LINES[r.id]) {
-    if (state.listen.autoVoice && hasRecording('guide', LINES[r.id])) { tell(said, true); speakGuide(LINES[r.id]); }
+    if (reading()) tellThen(said, { who: 'guide', text: LINES[r.id] });
     else tell(`${said} ${LINES[r.id]}`, true);
   } else tell(said, true);
 }

@@ -60,20 +60,20 @@ export function view() {
     return howtoPage({ name: G().title, lead: data.trials.myth.reconstruct.story, body: W.howtoBody, credit: G().credit, sounds: G().howto.sounds, goLabel: G().begin });
   }
   if (PIECES.every(id => g.placed[id])) {
-    return `${head(G().title)}<div class="recon-layout listen-recon">${statueHTML()}<aside class="panel">
+    // v2.1: 단추 줄을 장면 맨 끝으로 꺼내 화면 아래에 붙인다(조각상 아래에 있으면 작은 휴대폰에서 첫 화면 밖, 2026-11-21 360x740 검사)
+    return `${head(G().title)}<div class="recon-layout listen-recon">${statueHTML()}</div>
       <p>${esc(g.escaped ? TG().escaped : TG().who)}</p>
       <div class="row">${g.escaped
         ? `<button type="button" class="btn primary" id="giantOut" data-key="out">${esc(TG().out)}</button>`
-        : `<button type="button" class="btn primary" id="nobody" data-key="nobody">${esc(TG().nobody)}</button>`}</div></aside></div>`;
+        : `<button type="button" class="btn primary" id="nobody" data-key="nobody">${esc(TG().nobody)}</button>`}</div>`;
   }
   const zone = G().zones[ZONES[zoneIdx()]];
   return `${head(G().title)}${stripHTML()}
-    <div class="recon-layout listen-recon">${statueHTML()}
-      <aside class="panel"><div class="row">
-        <button type="button" class="btn" id="zoneNext" data-key="zoneNext">${esc(fill(W.zone, { zone }))}</button>
-        <button type="button" class="btn primary" id="placeBtn" data-key="place">${esc(fill(W.place, { zone }))}</button>
-        ${skipHTML()}</div></aside>
-    </div>`;
+    <div class="recon-layout listen-recon">${statueHTML()}</div>
+    <div class="row">
+      <button type="button" class="btn" id="zoneNext" data-key="zoneNext">${esc(fill(W.zone, { zone }))}</button>
+      <button type="button" class="btn primary" id="placeBtn" data-key="place">${esc(fill(W.place, { zone }))}</button>
+      ${skipHTML()}</div>`;
 }
 
 function tickGaze() {

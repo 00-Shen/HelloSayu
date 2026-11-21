@@ -1,6 +1,6 @@
 // 시각장애인판 「반가워, 사유 · 소리로 만나는 판」의 시작 파일(2026-11-12).
 // 오리지널의 app.js 대신 이 파일이 데이터를 읽고 장면을 넘긴다. 장면을 바꾸면 제목(h1)에 초점을 옮겨 낭독기가 제목부터 읽는다.
-import { $, esc, state, setState, data, freshState, load, save, wipe, log, hush, hooks } from './core.js';
+import { $, esc, state, setState, data, freshState, load, save, wipe, log, hush, hooks, isSpeaking } from './core.js';
 import { LISTEN_SCENES, freshListen, ensureListen } from './listen-rules.js';
 import * as L from './listen.js';
 import * as giant from './listen-giant.js';
@@ -29,8 +29,11 @@ function focusTitle() {
   if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
 }
 
-/** 장면을 다시 그린다. 초점은 같은 data-key 요소로 되돌리고, 없거나 비활성이면 제목으로 */
-function render() {
+/** 장면을 다시 그린다. 초점은 같은 data-key 요소로 되돌리고, 없거나 비활성이면 제목으로.
+ *  v2.1 읽어 주기: 장면에 새로 들어왔거나(go) 장면 안에서 화면이 바뀌면(단추 구성이 달라지면) 글을 읽어 준다.
+ *  같은 화면을 다시 그리는 것(조각을 붙인 뒤 등)은 읽지 않는다 — 그때는 알림(tell)이 소리로 나온다 */
+let lastShape = '';
+function render(enter = false) {
   const keep = document.activeElement?.closest?.('#scene [data-key]')?.dataset.key || null;
   // 초점이 있는 요소를 지우기 전에 초점부터 푼다 — 그대로 지우면 Firefox에서 Tab이 두 단추 사이만 오가는 일이 있었다
   if ($('#scene').contains(document.activeElement)) document.activeElement.blur();
@@ -40,6 +43,9 @@ function render() {
   if (el && !el.disabled) el.focus({ preventScroll: true });
   else if (!$('#scene').contains(document.activeElement) || keep) focusTitle();
   save();
+  const shape = state.scene + '|' + [...document.querySelectorAll('#scene button[id], #scene a[id]')].map(b => b.id).join(',');
+  if (enter === true || shape !== lastShape) L.readPage();
+  lastShape = shape;
 }
 
 function go(name) {
@@ -49,7 +55,7 @@ function go(name) {
   state.scene = name;
   log('scene_enter', { target: name });
   document.activeElement?.blur?.();
-  render();
+  render(true);
   window.scrollTo(0, 0);
 }
 
@@ -63,6 +69,11 @@ function restart() {
 
 // Esc는 언제든 녹음 목소리를 멈춘다(WCAG 1.4.2). 영상은 영상 자체의 재생/멈춤 단추로 다룬다
 document.addEventListener('keydown', e => { if (e.key === 'Escape') L.stopVoice(); });
+// v2.1 읽어 주기: 글자(제목 · 문단)를 누르면 그 장면을 처음부터 다시 읽는다. 읽는 중에 누르면 멈춘다
+document.addEventListener('click', e => {
+  if (!L.reading() || !e.target.closest?.('#scene h1, #scene p') || e.target.closest('button, a, input, video')) return;
+  if (isSpeaking()) L.stopVoice(); else L.readPage(0);
+});
 
 hooks.render = render;
 hooks.go = go;

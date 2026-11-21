@@ -21,7 +21,8 @@ const pluckCache = new Map();
 export function getContext() {
   const C = window.AudioContext || window.webkitAudioContext;
   if (!C) return null;
-  if (!ctx) ctx = new C();
+  // 소리 장치를 만들기 전에 아이폰 무음 모드 무시(core.js playEvenWhenSilent와 같은 줄 — music.js는 core.js를 부르지 않으므로 여기 한 번 더)
+  if (!ctx) { try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch {} ctx = new C(); }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }

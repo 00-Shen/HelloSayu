@@ -103,7 +103,8 @@ export function preferredVoice() {
     || vs.find(v => /Yuna|Heami|Sora|SunHi|Google.*한국|Natural|Premium/i.test(v.name))
     || vs[0];
 }
-const DEVICE = { sayu: { rate: 0.93, pitch: 1.16, volume: 0.96 }, rival: { rate: 0.98, pitch: 0.72, volume: 1 }, guide: { rate: 0.9, pitch: 0.6, volume: 1 }, siren: { rate: 0.78, pitch: 1.7, volume: 0.85 } };
+// narr: v2.1 '소리로 시작'의 읽어 주기(장면 글 · 알림) — 인물이 아닌 해설 목소리
+const DEVICE = { narr: { rate: 1, pitch: 1, volume: 1 }, sayu: { rate: 0.93, pitch: 1.16, volume: 0.96 }, rival: { rate: 0.98, pitch: 0.72, volume: 1 }, guide: { rate: 0.9, pitch: 0.6, volume: 1 }, siren: { rate: 0.78, pitch: 1.7, volume: 0.85 } };
 const SILENT = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
 const player = typeof Audio === 'function' ? new Audio() : null;
 let voiceSeq = 0;          // 새 말이 시작되면 이전 말(남은 이어 읽기 포함)은 버린다
@@ -114,8 +115,12 @@ export const hasRecordedVoice = () => !!data.voice && Object.values(data.voice.l
 const recorded = (who, text) => state.voiceMode !== 'device' && !voiceBroken && data.voice?.lines?.[who]?.[voiceKey(text)];
 
 // 모바일 브라우저는 첫 누름 전에는 소리를 막는다. 첫 누름에서 무음을 한 번 재생해 두면 이후 녹음이 재생된다(iOS)
+// 아이폰 무음(진동) 모드에서도 소리가 나게 한다(Safari 16.4+의 audioSession; 다른 브라우저는 없으면 그냥 넘어감).
+// 2026-11-21 실기기: 이 설정을 먼저 한 probe v1/v2에서 무음 모드에서도 '삐'와 녹음이 들렸다(USER 보고)
+export function playEvenWhenSilent() { try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch { /* 지원 안 함 */ } }
 function unlock() {
   ['pointerdown', 'keydown', 'touchend'].forEach(t => document.removeEventListener(t, unlock, true));
+  playEvenWhenSilent();
   if (!player) return;
   try { player.src = SILENT; player.play()?.catch(() => {}); } catch {}
 }
@@ -182,6 +187,35 @@ function playLine(who, text, my, done) {
   });
 }
 
+/** v2.1(2026-11-21) 소리로 시작 · 읽어 주기: [{who, text}]를 차례로 읽는다. who가 'narr'이거나 녹음이 없는 대사는 기기 음성
+ *  (해설 목소리), 녹음이 있는 대사는 녹음으로. append면 지금 읽는 차례 뒤에 붙인다(읽는 중이 아니면 바로 시작).
+ *  기기 음성은 화면 낭독기와 겹치므로, 이 함수는 사용자가 '소리로 시작'(읽어 주기)을 고른 때만 부른다 */
+let seqList = null, seqActive = false;
+export function sayParts(parts, { append = false } = {}) {
+  const list = (parts || []).filter(p => p && p.text);
+  if (!list.length) return;
+  if (append && seqActive && seqList) { seqList.push(...list); return; }
+  hush();
+  if (!state.audio) return;
+  const my = voiceSeq;
+  seqList = list; seqActive = true;
+  music.duck(true);
+  const next = i => {
+    if (my !== voiceSeq) return;
+    if (i >= list.length) { seqActive = false; music.duck(false); return; }
+    let fired = false, guard = 0;
+    const p = list[i], done = () => { if (fired) return; fired = true; clearTimeout(guard); next(i + 1); };
+    if (p.who !== 'narr' && recorded(p.who, p.text)) playLine(p.who, p.text, my, done);
+    else {
+      deviceSay('narr', p.text, my, done);
+      // 기기 음성의 끝 알림(onend)이 오지 않는 기기에서 차례가 멈추지 않게 — 글자 수로 넉넉히(한국어 1자 0.3초 + 5초)
+      guard = setTimeout(() => { if (my === voiceSeq) done(); }, 5000 + p.text.length * 300);
+    }
+  };
+  next(0);
+}
+export const isReading = () => seqActive;
+
 /** text가 배열이면 차례로 이어 읽는다(예: 쇳물 결과 + 결함 수) */
 function say(who, text) {
   hush();
@@ -219,6 +253,7 @@ export const backClass = done => (state.route === 'trials' && done ? 'primary' :
 export const isSpeaking = () => { try { return !!(player && !player.paused && !player.ended) || !!window.speechSynthesis?.speaking; } catch { return false; } };
 export function hush() {
   voiceSeq++;
+  seqActive = false;
   try { window.speechSynthesis?.cancel(); } catch {}
   try { if (player && !player.paused) player.pause(); } catch {}
   music.duck(false);

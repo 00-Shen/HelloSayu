@@ -98,3 +98,34 @@ h1 .pos { display: inline; font-size: .62em; font-weight: 700; color: var(--mute
 /* '다음 단계로 건너뛰기'는 어느 장면에서나 단추 줄의 맨 끝, 같은 모양(WCAG 3.2.3 일관된 길잡이) */
 .skip-btn { margin-left: auto; background: transparent; border-style: dashed; color: var(--muted); }
 .skip-btn:hover { color: var(--ink); border-color: var(--gold); }
+
+/* v2.1(2026-11-21 밤, 실기기 시험 뒤): 주 단추는 첫 화면 안 · 처음 화면은 큰 '소리로 시작' · 제안 고르기는 위/아래 두 칸.
+   iPhone 15 Pro에서 첫 쪽 그림이 커서 단추를 보려면 내려야 했다(USER 2026-11-21). tests/e2e/l5-keyboard.mjs의 휴대폰 화면 검사가 지킨다.
+   높이는 svh(주소창 · 도구 막대가 보일 때의 작은 화면 높이)로 잰다 — 휴대폰 브라우저의 vh는 막대가 숨은 큰 높이라 첫 화면을 넘칠 수 있다(앞의 vh 줄은 svh를 모르는 브라우저용) */
+.listen-hero { width: auto; max-width: min(100%, 420px); height: min(20vh, 200px); height: min(20svh, 200px); margin: 4px auto 10px; }
+.start-choices { display: grid; gap: 12px; margin: 10px 0 24px; }
+.start-choices .btn { width: 100%; }
+.start-choices a.btn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.start-read { min-height: max(28vh, 150px); min-height: max(28svh, 150px); font-size: 1.6rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.start-read .sub { display: block; font-size: .95rem; font-weight: 700; color: #3a2d10; margin: 0; }   /* 위의 .sub(회색)를 덮는다: 금색 바탕 위 대비 */
+
+/* 장면 끝의 단추 줄은 화면 아래에 붙는다(글 · 그림은 그 뒤로 흘러간다). 아주 낮은 화면(400% 확대 등)에서는 붙이지 않는다(WCAG 1.4.10) */
+#scene > .row:last-child .btn.primary { flex: 1 1 100%; min-height: 68px; font-size: 1.15rem; }
+@media (min-height: 520px) {
+  #scene > .row:last-child { position: sticky; bottom: 0; z-index: 5; margin: 16px -16px 0; padding: 18px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--bg) calc(100% - 14px), transparent); }   /* 흐려지는 띠는 위 여백(18px) 안에만 — 단추 옆으로 글이 비치지 않게 */
+}
+
+/* 그림은 작게: 무대 · 유리장 · 인물 카드 */
+.listen-pov.pov-stage { min-height: min(30vh, 300px); min-height: min(30svh, 300px); }
+.listen-night { max-height: 26vh; max-height: 26svh; overflow: hidden; }
+.meet-strip .listen-pov.pov-stage { min-height: min(12vh, 110px); min-height: min(12svh, 110px); }
+.meet-strip .pov-bottom { display: none; }
+.meet-strip ~ .reach-btn { width: min(200px, 54vw, 26vh); width: min(200px, 54vw, 26svh); }   /* 상태 글이 아래 붙은 단추 줄에 가리지 않게 */
+
+/* 마지막 제안: 위 '지운다' · 아래 '이대로 간다' */
+.offer-short { font-size: 1.3rem; font-weight: 800; color: var(--gold); margin: .2em 0 .3em; }
+.offer-replay { margin: 6px 0 10px; }
+.choice-halves { display: grid; gap: 14px; margin: 6px 0 16px; }
+.choice-halves .btn.half { width: 100%; min-height: max(25vh, 120px); min-height: max(25svh, 120px); font-size: 1.5rem; }
+.listen-recon { display: block; }   /* v2.1: 단추를 조각상 밖(장면 끝)으로 꺼냈으므로 두 칸 격자가 필요 없다 */

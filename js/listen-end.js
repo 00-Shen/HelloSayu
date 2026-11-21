@@ -6,7 +6,7 @@ import { fill } from './trials-rules.js';
 import { rowDetail, rowLabel, nextHint, starText, spokenSummary } from './score.js';
 import { result, ringStars, videoHTML, leave as endingLeave } from './ending.js';
 import * as sense from './sense.js';
-import { LD, V2, IMG, tell, voice, bindReplay, head, stageHTML, replayHTML, confirmRestart, stopVoice, skipHTML, bindSkip } from './listen.js';
+import { LD, V2, IMG, tell, voice, bindReplay, head, stageHTML, replayHTML, confirmRestart, stopVoice, skipHTML, bindSkip, srLineHTML, reading } from './listen.js';
 // v2(2026-11-21): 한 페이지 5개 이하. 제안의 하는 법은 대사 문단 끝으로, 점수 확인은 요약 한 문단 + '점수 자세히 듣기' 쪽으로,
 // 엔딩은 이야기 한 문단 + 영상 재생(영상이 있으면 영상 속 목소리) + 다시 하기 · 점수 다시 보기.
 import { bindPlayButton } from './film.js';
@@ -27,9 +27,14 @@ export function offerView() {
     return `${h}${stageHTML(O.first, '', W.entry, W.thought)}
       <div class="row">${replayHTML(O.first)}<button type="button" class="btn primary" id="offerNext" data-key="offerNext">${esc(TO.firstButton)}</button>${skipHTML()}</div>`;
   }
-  return `${h}${stageHTML(O.answer, '', '', W.choose)}
-    <div class="row choices">${replayHTML(O.answer)}<button type="button" class="btn big" id="offerErase" data-key="erase">${esc(TO.erase)}</button>
-      <button type="button" class="btn big primary" id="offerKeep" data-key="keep">${esc(TO.keep)}</button></div>`;
+  // v2.1: 고르기는 화면의 위 · 아래 두 칸(누를 곳이 크고, 말로 '위쪽은 지운다 · 아래쪽은 이대로 간다'를 알려 준다).
+  // 무대 그림은 빼고 짧은 물음만 보인다 — 두 칸이 첫 화면 안에 들어오게. 낭독기 · 읽어 주기는 대사와 설명 한 문단
+  return `${h}
+    <p class="offer-short" aria-hidden="true">${esc(W.short)}</p>
+    <p class="sr-only">${srLineHTML(O.answer, '', W.choose)}</p>
+    <div class="row offer-replay">${replayHTML(O.answer)}</div>
+    <div class="choice-halves"><button type="button" class="btn half" id="offerErase" data-key="erase">${esc(TO.erase)}</button>
+      <button type="button" class="btn half primary" id="offerKeep" data-key="keep">${esc(TO.keep)}</button></div>`;
 }
 
 export function offerBind() {
@@ -92,7 +97,8 @@ export function resultBind() {
     return;
   }
   ringStars(r.stars, 1500);   // 낭독기가 제목을 읽은 뒤, 별 수만큼 종소리와 진동
-  setTimeout(() => { if (state.scene === 'listenResult' && !detail) tell(spokenSummary(r, C()), true); }, 1500 + r.stars * 650 + 300);
+  // 읽어 주기에서는 장면 글(점수 문단)을 이미 읽으므로 요약은 글 알림으로만
+  setTimeout(() => { if (state.scene === 'listenResult' && !detail) tell(spokenSummary(r, C()), true, !reading()); }, 1500 + r.stars * 650 + 300);
   $('#toEnding').onclick = () => { hush(); hooks.go('listenEnd'); };
   $('#toDetail').onclick = () => { hush(); detail = true; hooks.render(); $('h1')?.focus?.({ preventScroll: true }); };
   confirmRestart($('#scoreAgain'));
