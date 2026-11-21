@@ -9,7 +9,7 @@ import { $, $$, esc, state, data, log, save, hooks, sfx } from './core.js';
 import * as sense from './sense.js';
 import { pluckSfx } from './music.js';
 import { gazeAt, fill } from './trials-rules.js';
-import { PIECES, SETTLED, ZONES, placeOutcome, giantTodo, cycleNext, cycleFix, firstLoose, piecesLeft } from './listen-rules.js';
+import { PIECES, SETTLED, ZONES, placeOutcome, giantTodo, cycleNext, cycleFix, firstLoose, piecesLeft, afterGiant } from './listen-rules.js';
 import { LD, V2, tell, head, howtoPage, bindSampleCycle, skipHTML, bindSkip } from './listen.js';
 
 const G = () => LD().giant;
@@ -149,7 +149,7 @@ export function bind() {
       $('#giantOut')?.focus({ preventScroll: true });
       tell(TG().escaped, true);
     });
-    $('#giantOut')?.addEventListener('click', () => hooks.go('listenGallery'));
+    $('#giantOut')?.addEventListener('click', () => hooks.go(afterGiant(state.listen)));   // 짧게 하기면 마지막 제안으로(2026-11-22)
     return;
   }
   if (!g.picked) g.picked = firstLoose(g);

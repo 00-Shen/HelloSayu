@@ -13,7 +13,7 @@ import { $, $$, esc, state, data, log, announce, save, hooks, speak, speakRival,
 import { filmHTML, bindFilm, overviewHTML, bindOverview, stopOverview } from './film.js';
 import { povStage } from './story.js';
 import { pluckSfx } from './music.js';
-import { LISTEN_SCENES, lineText, shouldTell, CHAPTERS, skipPlan, markSkipped, resetChapter, markUnplayedBefore, setEasy } from './listen-rules.js';
+import { LISTEN_SCENES, scenesOf, lineText, shouldTell, CHAPTERS, skipPlan, markSkipped, resetChapter, markUnplayedBefore, setEasy } from './listen-rules.js';
 import { fill } from './trials-rules.js';
 import * as reach from './reach.js';
 import * as sense from './sense.js';
@@ -152,8 +152,10 @@ export const creditHTML = () => '';
 export const posHTML = () => '';
 /** 장면 제목: 눈에는 '(3/8)', 낭독기에는 '여덟 장 중 셋째'를 제목 안에서 함께 읽는다(머무는 곳 하나) */
 export function head(title) {
-  const P = LD().position, i = Math.max(0, LISTEN_SCENES.indexOf(state.scene));
-  return `<h1>${esc(title)} <span class="pos" aria-hidden="true">(${esc(fill(V2().pos, { n: i + 1 }))})</span><span class="sr-only">, ${esc(fill(P.template, { nth: P.nth[i], name: '' }).replace(/ · $/, ''))}</span></h1>`;
+  // 짧게 하기(2026-11-22)는 청동 전시실 없이 일곱 장으로 센다
+  const short = !!state.listen?.short, P = short ? { ...LD().position, template: LD().short.template } : LD().position;
+  const i = Math.max(0, scenesOf(state.listen).indexOf(state.scene));
+  return `<h1>${esc(title)} <span class="pos" aria-hidden="true">(${esc(fill(short ? LD().short.pos : V2().pos, { n: i + 1 }))})</span><span class="sr-only">, ${esc(fill(P.template, { nth: P.nth[i], name: '' }).replace(/ · $/, ''))}</span></h1>`;
 }
 /** 예전 하는 법(목표 → 조작 → 소리의 뜻 → 틀리면). v2 화면에서는 쓰지 않는다 */
 export function howtoHTML(h, extra = '') {
@@ -217,7 +219,7 @@ export function bindSkip() {
     log('listen_skip', { from: state.scene, to: plan.to, trial: plan.trial });
     const C = V2().chapters.names;
     let name = '';
-    if (plan.to === 'prologue') { l.filmSeen = true; name = LD().prologue.pages[0].title; save(); hooks.go('listenPrologue'); }
+    if (plan.to === 'prologue') { l.filmSeen = true; name = pages()[0].title; save(); hooks.go('listenPrologue'); }
     else if (plan.to === 'room2') { l.gal.room = 2; l.gal.begun1 = true; name = LD().gal.room2.title; save(); hooks.go('listenGallery'); }
     else if (plan.to === 'choose') { t.offerStep = 1; name = LD().offer.title; save(); hooks.go('listenOffer'); }
     else if (plan.to === 'listenResult') { l.meetStarted = true; t.met = true; t.meetStep = 2; name = data.score.text.title; save(); hooks.go('listenResult'); }
@@ -264,6 +266,7 @@ export function startView() {
   if (l.startView === 'chapters') return chaptersView();
   if (l.startView === 'settings') return settingsView();
   if (l.startView === 'about') return aboutView();
+  if (l.startView === 'length') return lengthView();
   // v2.1: QR로 들어오면 이 화면. 큰 '소리로 시작'(읽어 주기) · 낭독기 · 보면서 · 선생님용(장 고르기 · 설정) — 정거장 5개
   // v2.1d: VoiceOver를 켠 채 '소리로 시작'을 고르면 기기 음성과 낭독기가 겹쳐 읽었다(USER iPhone 녹화 22:57) — 낭독기만 듣는 안내를 단추 이름 안에 · v2.1e(23:3x): USER 23:17 녹화에서 안내가 두 번 톡에 '화면 낭독기를 켜두어'까지만 읽혀 짧게 · v2.1f: 23:42 녹화에서도 이름 뒤 안내가 잘려 안내를 이름 앞에
   return `<h1>${esc(LD().title)}</h1>
@@ -273,6 +276,18 @@ export function startView() {
       <button type="button" class="btn" id="beginSr" data-key="beginSr">${esc(l.resume ? T.srResume : T.sr)}</button>
       <a class="btn" id="look" data-key="look" href="${esc(T.lookHref)}">${esc(T.look)}</a>
       <button type="button" class="btn small" id="toMenu" data-key="toMenu">${esc(T.menu)}</button>
+    </div>`;
+}
+/** v2(2026-11-22, USER): '소리로 시작' · '화면 낭독기로 하기'를 고른 다음 쪽 — 짧게 하기(약 5분) · 끝까지 하기(약 11분).
+ *  정거장 5개: 제목 · 글 · 단추 셋. 큰 단추(먼저 닿는 단추)는 짧게 하기 */
+function lengthView() {
+  const W = V2().length;
+  return `<h1>${esc(W.title)}</h1>
+    <p class="length-lead">${esc(W.lead)}</p>
+    <div class="start-choices length-choices">
+      <button type="button" class="btn primary start-read" id="lenShort" data-key="lenShort">${esc(W.short)}<span class="sub">${esc(W.shortSub)}</span></button>
+      <button type="button" class="btn" id="lenFull" data-key="lenFull">${esc(W.full)}</button>
+      <button type="button" class="btn small" id="lenBack" data-key="lenBack">${esc(W.back)}</button>
     </div>`;
 }
 /** 선생님 · 도우미용: 장 고르기 · 설정 · 작품 소개 */
@@ -320,6 +335,7 @@ export function startBind() {
         LISTEN_SCENES.slice(i).forEach(x => resetChapter(l, state.trials, x));
         markUnplayedBefore(l, state.trials, sc);   // 앞 장에서 마치지 않은 시련은 0점(건너뛴 것과 같다)
         l.doneAt = null; l.resume = null; l.startView = 'main'; l.chapterPage = 1;
+        l.short = false;   // 장 고르기는 끝까지 하기의 장들(2026-11-22)
         if (sc === 'listenPrologue') l.filmSeen = false;
         log('listen_chapter', { to: sc });
         save();
@@ -353,6 +369,18 @@ export function startBind() {
     return;
   }
   if (v === 'about') { if (data.trials.overview) bindOverview(data.trials.overview); return; }
+  if (v === 'length') {
+    const pick = short => () => {
+      l.short = short; l.startView = 'main'; l.page = 0;
+      l.filmSeen = short;   // 짧게 하기는 작품 소개 영상 없이 바로 이야기로
+      log('listen_length', { short }); save();
+      hooks.go('listenPrologue');
+    };
+    $('#lenShort').onclick = pick(true);
+    $('#lenFull').onclick = pick(false);
+    $('#lenBack').onclick = () => sub('main');
+    return;
+  }
   if (v === 'menu') {
     $('#toChapters').onclick = () => { l.chapterPage = 1; sub('chapters'); };
     $('#toSettings').onclick = () => sub('settings');
@@ -360,12 +388,13 @@ export function startBind() {
     return;
   }
   // 소리로 시작: 읽어 주기를 켜고, 이 누름 안에서 첫 안내를 말한다(iOS는 사람이 누른 순간에만 기기 음성을 연다)
+  // v2(2026-11-22): 처음이면 길이 고르기 쪽(짧게 · 끝까지)으로, 이어서 하기면 하던 곳으로
   const begin = read => () => {
     l.autoVoice = read;
-    const to = l.resume || 'listenPrologue';
-    log(l.resume ? 'listen_resume' : 'listen_begin', { to, read });
-    l.resume = null; save();
-    hooks.go(to);
+    const to = l.resume;
+    log(to ? 'listen_resume' : 'listen_begin', { to, read });
+    l.resume = null;
+    if (to) { save(); hooks.go(to); } else sub('length');
     if (read) sayParts(narrParts(V2().start.welcome));
   };
   $('#beginRead').onclick = begin(true);
@@ -375,7 +404,8 @@ export function startBind() {
 }
 
 /* ---------- 프롤로그 ---------- */
-const pages = () => LD().prologue.pages;
+// 짧게 하기(2026-11-22): 밤의 정원 · 수집가 유태양(끝까지 하기와 같은 쪽) + 흙손 영감('오늘은 시련 하나'), 세 쪽
+const pages = () => (state.listen?.short ? [...LD().short.keep.map(i => LD().prologue.pages[i]), ...LD().short.extra] : LD().prologue.pages);
 const page = () => pages()[Math.min(state.listen.page, pages().length - 1)];
 /** 상황 설명 영상(화면 해설판): 프롤로그 첫 쪽 앞에서 한 번. 재생 단추로 시작하고 다 들으면 프롤로그로 넘어간다 */
 const filmFirst = () => !!data.trials.prologue.film && state.listen.page === 0 && !state.listen.filmSeen;

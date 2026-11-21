@@ -112,7 +112,7 @@ export function endView() {
   const lead = `${fill(T.starsSpoken, { n: r.stars })} · ${fill(T.total, { n: r.total, max: r.max })}. ${E.narration}`;
   return `${head(`${E.name} · ${E.title}`)}
     ${video}
-    ${stageHTML(line, data.trials.garden.eyebrow, lead, `${LE.summary} ${LE.thanks}`)}
+    ${stageHTML(line, data.trials.garden.eyebrow, lead, `${state.listen?.short ? LD().short.endSummary : LE.summary} ${LE.thanks}`)}
     <div class="row">${video ? `<button type="button" class="btn" id="endPlay" data-key="endPlay">${esc(data.trials.prologue.film.play)}</button>` : replayHTML(line)}
       <button type="button" class="btn primary" id="again" data-key="again">${esc(LE.again)}</button>
       <button type="button" class="btn" id="toResult" data-key="toResult">${esc(T.toResult)}</button></div>`;

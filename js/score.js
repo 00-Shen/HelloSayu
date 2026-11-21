@@ -68,14 +68,18 @@ export function maxOf(cfg, edition) {
 export function computeScore({ edition, state, cfg, at = Date.now() }) {
   if (!EDITIONS.includes(edition)) throw new Error(`알 수 없는 판: ${edition}`);
   const sc = skillCounts(edition, state), hc = heartCounts(edition, state);
-  const skill = Object.entries(cfg.skill[edition]).map(([id, rule]) => ({ id, counts: sc[id] || {}, points: rowPoints(rule, sc[id]), max: rule.max }));
-  const heart = Object.entries(cfg.heart).map(([id, rule]) => ({ id, counts: hc[id] || {}, points: heartPoints(id, rule, hc[id]), max: rule.max }));
-  const max = maxOf(cfg, edition);
+  // v2(2026-11-22) 소리로 만나는 판의 '짧게 하기': 청동 전시실이 없으므로 남은 칸으로 솜씨 100 · 마음 100(data/score.json listenShort)
+  const short = edition === 'listen' && !!state.listen?.short && !!cfg.listenShort;
+  const skillRules = short ? cfg.listenShort.skill : cfg.skill[edition], heartRules = short ? cfg.listenShort.heart : cfg.heart;
+  const skill = Object.entries(skillRules).map(([id, rule]) => ({ id, counts: sc[id] || {}, points: rowPoints(rule, sc[id]), max: rule.max }));
+  const heart = Object.entries(heartRules).map(([id, rule]) => ({ id, counts: hc[id] || {}, points: heartPoints(id, rule, hc[id]), max: rule.max }));
+  const m = rules => Object.values(rules).reduce((s, r) => s + r.max, 0);
+  const max = { skill: m(skillRules), heart: m(heartRules) };
   const total = sum(skill) + sum(heart);
   const refusedFirst = !(state.trials?.offerErased);
   const ending = endingOf(total, refusedFirst, cfg.endings);
   return {
-    edition, at, skill, heart,
+    edition, short, at, skill, heart,
     skillPoints: sum(skill), heartPoints: sum(heart), skillMax: max.skill, heartMax: max.heart,
     total, max: max.skill + max.heart, refusedFirst, ending, stars: STARS[ending]
   };
