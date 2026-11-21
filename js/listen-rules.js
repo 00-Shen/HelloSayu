@@ -2,12 +2,6 @@
 // DOM을 쓰지 않아 node 단위 시험(tests/listen.test.mjs)이 바로 읽는다.
 // 2026-11-18: 만남 앞에 유태양의 마지막 제안(listenOffer), 만남 뒤에 점수 확인(listenResult)을 넣었다. 끝(listenEnd)은 점수에 따른 엔딩이다
 export const LISTEN_SCENES = ['listenStart', 'listenPrologue', 'listenGiant', 'listenGallery', 'listenOffer', 'listenMeet', 'listenResult', 'listenEnd'];
-// v2(2026-11-22, USER '짧게 하기와 끝까지 하기 두 입구'): 짧게 하기는 청동 전시실 없이 일곱 장(작품 소개 영상도 건너뛴다)
-export const SHORT_SCENES = LISTEN_SCENES.filter(s => s !== 'listenGallery');
-/** 이 판에서 지나는 장들(제목의 '(3/8)' · '여덟 장 중 셋째'가 이것으로 센다) */
-export const scenesOf = l => (l?.short ? SHORT_SCENES : LISTEN_SCENES);
-/** 거인 동굴 다음 장: 끝까지면 청동 전시실, 짧게면 마지막 제안 */
-export const afterGiant = l => (l?.short ? 'listenOffer' : 'listenGallery');
 
 /* ---------- 첫째 시련 · 외눈 거인의 동굴 ---------- */
 export const PIECES = ['crown', 'hand', 'leg'];     // 제자리를 잃은 조각 셋
@@ -38,7 +32,6 @@ export const SAMPLES = {
 export function freshListen() {
   return {
     page: 0, filmSeen: false, resume: null, doneAt: null, meetStarted: false,
-    short: false,   // v2(2026-11-22): 짧게 하기(길이 고르기 쪽에서 정한다)
     // v2(2026-11-21, 교수 피드백 '한 페이지 5개 이하' · '다음 단계로 바로 점프'): 시작 화면의 작은 쪽, 장 고르기 쪽, 하는 법 쪽, 건너뛴 시련
     startView: 'main', chapterPage: 1, sample: 0, skipped: [],
     easy: true,   // 쉬운 모드(설정): 거인 · 만남의 손이 천천히, 2방 거리를 말로도. 초·중·고 시각장애 학생이 주 대상이라 처음엔 켜 둔다
@@ -144,7 +137,7 @@ export const TRIAL_SCENE = { giant: 'listenGiant', room1: 'listenGallery', room2
 export function skipPlan(scene, l, t) {
   const open = id => (TRIAL_DONE[id](l, t) ? null : id);
   if (scene === 'listenPrologue') return { to: 'listenGiant', trial: null };
-  if (scene === 'listenGiant') return { to: afterGiant(l), trial: open('giant') };
+  if (scene === 'listenGiant') return { to: 'listenGallery', trial: open('giant') };
   if (scene === 'listenGallery') {
     if (l.gal.room === 1) return { to: 'room2', trial: open('room1') };
     return { to: 'listenOffer', trial: open('room2') };
@@ -153,7 +146,23 @@ export function skipPlan(scene, l, t) {
   if (scene === 'listenMeet') return { to: 'listenResult', trial: open('meet') };
   return null;
 }
-/** 시련을 건너뛰면 그 시련 칸은 0점이 되도록 표시한다 */
+/** v2.3(2026-11-22, USER '건너뛰어도 끝난 것처럼 소리가 나고 다음 관으로'): 건너뛴 시련을 흙손 영감이 대신 마친 상태로 만든다.
+ *  그러면 그 장면을 다시 그릴 때 시련의 끝 쪽(마지막 말 · 소리)이 그대로 나온다. 점수는 그 시련의 기본 점수(data/score.json listenFloor).
+ *  거인: 남은 조각을 제자리에, '아무도 아니' 뒤(빠져나옴) · 1방: 마침 · 2방: 흔적 둘 · 만남: 닿을 듯 멈춘 뒤 */
+export function finishBySkip(trial, l, t, zoneOf) {
+  if (trial === 'giant') {
+    const g = l.giant;
+    g.started = true; g.picked = null; g.escaped = true;
+    PIECES.forEach(id => { if (!g.placed[id]) g.placed[id] = zoneOf[id]; });
+  } else if (trial === 'room1') {
+    Object.assign(l.gal, { room: 1, begun1: true, done1: true, hand: null });
+  } else if (trial === 'room2') {
+    Object.assign(l.gal, { room: 2, begun1: true, begun2: true, found: TRACES.map(x => x.id) });
+  } else if (trial === 'meet') {
+    l.meetStarted = true; t.met = true; t.meetStep = 2;
+  }
+}
+/** 시련을 건너뛰면 그 시련 칸은 기본 점수만 받도록 표시한다(v2.3 전에는 0점) */
 export function markSkipped(l, trial) {
   if (trial && !l.skipped.includes(trial)) l.skipped.push(trial);
 }
